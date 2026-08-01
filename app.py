@@ -10,85 +10,212 @@ from src.inference import load_model_bundle, predict_image
 ROOT = Path(__file__).resolve().parent
 ARTIFACT_PATH = ROOT / "artifacts" / "best_EfficientNetB0_FastKAN.pth"
 
+# =========================================================
+# Translations
+# =========================================================
+
+T = {
+    "uz": {
+        "lang_name": "O'zbekcha",
+        "page_title": "Haydovchi uyquchanligini aniqlash",
+        "subtitle": "EfficientNetB0 + FastKAN modeli asosida",
+        "upload_label": "Yuz rasmini yuklang",
+        "upload_help": "JPG, JPEG yoki PNG formatidagi rasm",
+        "uploaded_caption": "Yuklangan rasm",
+        "predict_btn": "Tahlil qilish",
+        "result_title": "Natija",
+        "status": "Holat",
+        "confidence": "Ishonchlilik",
+        "prob_title": "Klasslar bo'yicha ehtimollik",
+        "drowsy": "Uyqusiragan",
+        "not_drowsy": "Uyg'oq",
+        "model_load_error": "Model faylini yuklab bo'lmadi.",
+        "limitation_title": "Muhim eslatma",
+        "limitation_body": (
+            "Model NTHU-DDD dataseti (infraqizil kamera, yaqin masofadagi "
+            "haydovchi yuzi) asosida o'qitilgan. Oddiy telefon yoki veb-kamera "
+            "rasmlari modelga tanish emas, shuning uchun bunday rasmlarda natija "
+            "noto'g'ri bo'lishi mumkin. Bu — datasetning cheklovi, dastur xatosi emas."
+        ),
+        "footer": "Ta'lim maqsadidagi namoyish. Haqiqiy xavfsizlik qarorlari uchun ishlatmang.",
+        "classes": {
+            "notdrowsy": "Uyg'oq",
+            "sleepyCombination": "Uyquchan holat",
+            "slowBlinkWithNodding": "Sekin pirpirash / bosh irg'ash",
+            "yawning": "Esnash",
+        },
+    },
+    "en": {
+        "lang_name": "English",
+        "page_title": "Driver Drowsiness Detection",
+        "subtitle": "Powered by EfficientNetB0 + FastKAN",
+        "upload_label": "Upload a face image",
+        "upload_help": "Image in JPG, JPEG or PNG format",
+        "uploaded_caption": "Uploaded image",
+        "predict_btn": "Analyze",
+        "result_title": "Result",
+        "status": "Status",
+        "confidence": "Confidence",
+        "prob_title": "Probability by class",
+        "drowsy": "Drowsy",
+        "not_drowsy": "Alert",
+        "model_load_error": "Could not load the model file.",
+        "limitation_title": "Important note",
+        "limitation_body": (
+            "The model was trained on the NTHU-DDD dataset (near-infrared camera, "
+            "close-up driver face). Ordinary phone or webcam photos are unfamiliar "
+            "to the model, so results on such images may be unreliable. This is a "
+            "dataset limitation, not a bug."
+        ),
+        "footer": "Educational demo. Do not use for real safety-critical decisions.",
+        "classes": {
+            "notdrowsy": "Alert",
+            "sleepyCombination": "Sleepy state",
+            "slowBlinkWithNodding": "Slow blink / nodding",
+            "yawning": "Yawning",
+        },
+    },
+    "ru": {
+        "lang_name": "Русский",
+        "page_title": "Определение сонливости водителя",
+        "subtitle": "На основе модели EfficientNetB0 + FastKAN",
+        "upload_label": "Загрузите изображение лица",
+        "upload_help": "Изображение в формате JPG, JPEG или PNG",
+        "uploaded_caption": "Загруженное изображение",
+        "predict_btn": "Анализировать",
+        "result_title": "Результат",
+        "status": "Состояние",
+        "confidence": "Уверенность",
+        "prob_title": "Вероятность по классам",
+        "drowsy": "Сонливость",
+        "not_drowsy": "Бодрый",
+        "model_load_error": "Не удалось загрузить файл модели.",
+        "limitation_title": "Важное примечание",
+        "limitation_body": (
+            "Модель обучена на датасете NTHU-DDD (инфракрасная камера, лицо "
+            "водителя крупным планом). Обычные фото с телефона или веб-камеры "
+            "незнакомы модели, поэтому результаты на таких изображениях могут "
+            "быть недостоверными. Это ограничение датасета, а не ошибка."
+        ),
+        "footer": "Учебная демонстрация. Не используйте для реальных решений безопасности.",
+        "classes": {
+            "notdrowsy": "Бодрый",
+            "sleepyCombination": "Сонное состояние",
+            "slowBlinkWithNodding": "Медленное моргание / кивание",
+            "yawning": "Зевота",
+        },
+    },
+}
+
+# =========================================================
+# Page config + styles
+# =========================================================
+
 st.set_page_config(
     page_title="Driver Drowsiness Detection",
     page_icon="🚗",
     layout="centered",
 )
 
+st.markdown(
+    """
+    <style>
+    .block-container { max-width: 720px; padding-top: 2.5rem; }
+    h1 { font-weight: 700; letter-spacing: -0.02em; }
+    .app-subtitle {
+        color: #6b7280; font-size: 1.02rem; margin-top: -0.6rem;
+        margin-bottom: 1.6rem;
+    }
+    .stButton > button {
+        border-radius: 10px; font-weight: 600; height: 3rem;
+        background: #e63946; color: white; border: none;
+    }
+    .stButton > button:hover { background: #c92a3a; color: white; }
+    div[data-testid="stMetricValue"] { font-size: 1.7rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 @st.cache_resource(show_spinner=False)
 def get_model_bundle():
-    """Load the saved model once for the app process."""
     return load_model_bundle(ARTIFACT_PATH)
 
 
-st.title("Driver Drowsiness Detection")
-st.caption("EfficientNetB0 + FastKAN — saved model -> inference function -> Streamlit wrapper")
+# =========================================================
+# Language selector
+# =========================================================
 
-st.info(
-    "This app does not train a model. It loads a saved PyTorch model "
-    "(best_EfficientNetB0_FastKAN.pth) and runs inference on one uploaded image."
-)
+_, lang_col = st.columns([3, 1])
+with lang_col:
+    lang = st.selectbox(
+        "Language",
+        options=["uz", "en", "ru"],
+        format_func=lambda c: T[c]["lang_name"],
+        label_visibility="collapsed",
+    )
+
+t = T[lang]
+
+# =========================================================
+# Header
+# =========================================================
+
+st.title(t["page_title"])
+st.markdown(f'<div class="app-subtitle">{t["subtitle"]}</div>', unsafe_allow_html=True)
 
 try:
     model_bundle = get_model_bundle()
-except FileNotFoundError as exc:
-    st.error(str(exc))
+except FileNotFoundError:
+    st.error(t["model_load_error"])
     st.stop()
 
+# =========================================================
+# Upload + predict
+# =========================================================
+
 uploaded_file = st.file_uploader(
-    "Upload a face image (jpg, jpeg, png)",
+    t["upload_label"],
     type=["jpg", "jpeg", "png"],
+    help=t["upload_help"],
 )
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded image", use_container_width=True)
+    st.image(image, caption=t["uploaded_caption"], use_container_width=True)
 
-    if st.button("Predict", use_container_width=True):
-        try:
-            result = predict_image(image, bundle=model_bundle)
-        except ValueError as exc:
-            st.error(f"Input rejected: {exc}")
+    if st.button(t["predict_btn"], use_container_width=True):
+        result = predict_image(image, bundle=model_bundle)
+
+        is_drowsy = result["top_class"] != "notdrowsy"
+        status_text = t["drowsy"] if is_drowsy else t["not_drowsy"]
+        class_text = t["classes"].get(result["top_class"], result["top_class"])
+
+        st.divider()
+        st.subheader(t["result_title"])
+
+        c1, c2 = st.columns(2)
+        c1.metric(t["status"], status_text)
+        c2.metric(t["confidence"], f"{result['confidence']:.1%}")
+
+        summary = f"{class_text} — {result['confidence']:.1%}"
+        if is_drowsy:
+            st.warning(summary)
         else:
-            st.divider()
-            st.subheader("Prediction result")
+            st.success(summary)
 
-            label_col, conf_col = st.columns(2)
-            label_col.metric("Status", result["label"])
-            conf_col.metric("Confidence", f"{result['confidence']:.1%}")
+        st.caption(t["prob_title"])
+        localized_probs = {
+            t["classes"].get(k, k): v for k, v in result["probabilities"].items()
+        }
+        st.bar_chart(localized_probs)
 
-            if result["label"] == "Drowsy":
-                st.warning(result["summary"])
-            else:
-                st.success(result["summary"])
+# =========================================================
+# Limitation note + footer
+# =========================================================
 
-            st.caption("Probability by class")
-            st.bar_chart(result["probabilities"])
+with st.expander(t["limitation_title"]):
+    st.write(t["limitation_body"])
 
-            st.caption(f"Saved artifact version: {result['model_version']}")
-
-with st.expander("What this deployment demonstrates"):
-    st.markdown(
-        """
-        - The model weights are committed in `artifacts/`.
-        - `src/inference.py` owns model definition, validation, and prediction.
-        - `app.py` is only the user-interface wrapper.
-        - Streamlit Community Cloud runs the app from the GitHub repository.
-        """
-    )
-
-with st.expander("Known limitation — read before testing with your own photos"):
-    st.markdown(
-        """
-        This model was trained on the **NTHU-DDD** dataset, which consists of
-        near-infrared, close-up driver camera footage. Ordinary daytime phone
-        or webcam photos look visually very different to the model (color,
-        lighting, framing, camera sensor), so predictions on such photos can
-        be unreliable even when the model scores ~98% accuracy on its own
-        test set. This is a known dataset/domain limitation, not a bug.
-        """
-    )
-
-st.caption("Educational demo. Do not use this app for real safety-critical decisions.")
+st.caption(t["footer"])
