@@ -1,0 +1,11 @@
+Bu papkaga sizning Google Drive'ingizdagi model faylini yuklashingiz kerak:
+
+  best_EfficientNetB0_FastKAN.pth
+
+Yuklab bo'lgach, bu PUT_MODEL_HERE.txt faylini o'chirib tashlashingiz mumkin
+(ixtiyoriy — u faqat eslatma sifatida qo'yilgan).
+
+Fayl aynan shu nom bilan va aynan shu papkada bo'lishi shart:
+  artifacts/best_EfficientNetB0_FastKAN.pth
+
+src/inference.py va app.py shu yo'lni kutadi.
