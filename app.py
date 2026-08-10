@@ -117,29 +117,23 @@ st.set_page_config(
     layout="centered",
 )
 
+# Asl (eski) uslub asos qilib olindi, faqat fon chiroyli qilib yangilandi
 st.markdown(
     """
     <style>
-    /* Umumiy fon — Telegram Web'dagi kabi ochiq ko'k gradient */
+    /* Sahifaning umumiy foni — yumshoq, ko'zga yoqimli gradient */
     .stApp {
-        background: linear-gradient(180deg, #E9F1F7 0%, #DCE9F2 45%, #CFE1EC 100%);
+        background: linear-gradient(160deg, #f5f7fb 0%, #e8eef5 40%, #dfe9f3 100%);
     }
 
-    /* Markaziy "karta" — oq fon, yumaloq burchak, yengil soya */
     .block-container {
         max-width: 720px;
-        padding: 2.2rem 2.4rem 2.4rem;
-        margin-top: 2rem;
-        margin-bottom: 2rem;
-        background: #ffffff;
-        border-radius: 18px;
-        box-shadow: 0 8px 30px rgba(0, 40, 80, 0.08), 0 1px 3px rgba(0, 40, 80, 0.06);
+        padding-top: 2.5rem;
     }
 
     h1 {
         font-weight: 700;
         letter-spacing: -0.02em;
-        color: #17212B;
     }
 
     .app-subtitle {
@@ -149,36 +143,20 @@ st.markdown(
         margin-bottom: 1.6rem;
     }
 
-    /* Telegram ko'k rangidagi tugma */
     .stButton > button {
         border-radius: 10px;
         font-weight: 600;
         height: 3rem;
-        background: linear-gradient(180deg, #2AABEE 0%, #229ED9 100%);
+        background: #e63946;
         color: white;
         border: none;
-        box-shadow: 0 2px 8px rgba(34, 158, 217, 0.35);
     }
     .stButton > button:hover {
-        background: linear-gradient(180deg, #229ED9 0%, #1E8FC4 100%);
+        background: #c92a3a;
         color: white;
-    }
-
-    /* Fayl yuklash maydoni — Telegram xabar pufakchasiga o'xshash */
-    div[data-testid="stFileUploaderDropzone"] {
-        border-radius: 14px;
-        border: 1.5px dashed #B7D4E8;
-        background: #F5FAFD;
     }
 
     div[data-testid="stMetricValue"] { font-size: 1.7rem; }
-
-    /* Expander (Muhim eslatma) — pufakcha ko'rinishi */
-    div[data-testid="stExpander"] {
-        border-radius: 12px;
-        border: 1px solid #E3ECF2;
-        background: #F7FAFC;
-    }
     </style>
     """,
     unsafe_allow_html=True,
