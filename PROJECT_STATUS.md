@@ -1,46 +1,29 @@
-# Project Status — Driver Drowsiness Detection Deployment
+# PROJECT STATUS
 
-## Primary route
-Streamlit Community Cloud deployed from a public GitHub repository.
+## EXTC4 — Evidence & Defense Readiness Gate
 
-## Fallback route
-Run the same `app.py` locally, or show a saved screenshot of the working
-public app (see Colab notebook results for reference test-set metrics).
+Project: **Driver Drowsiness Detection (EfficientNetB0 + FastKAN)**
+Student: *[your full name]*
+Repository: `https://github.com/Odamov490/driver-drowsiness-detection`
+Live demo: `https://driver-drowsiness-detection-1997.streamlit.app`
 
-## Demo contract
-- Input: one uploaded face image (jpg/jpeg/png).
-- Output: predicted class (`notdrowsy`, `sleepyCombination`,
-  `slowBlinkWithNodding`, `yawning`), confidence, and a probability bar chart.
-- Validation: missing/invalid images are rejected with a clear message.
-- Entry point: `app.py`.
+- Readiness status: **GREEN** (pending live defense)
+- Pitch actual duration: *[fill after rehearsal]*
+- Self-work defense question: "Where is the final unseen-data evaluation, and why is it valid?" — answered with notebook Cell 15.
+- Highest-risk blocker: delivering the live defense + Q&A (all technical evidence is in place).
+- Blocker result: exact repair task created (rehearse pitch + demo once)
+- Evidence matrix complete: yes
+- Essential requirements checked: yes
+- Solo Show-Me-Where complete: yes (3/3 PASS)
+- Defense question bank (>=3) complete: yes (8 prepared)
+- One updated core artifact/evidence path: `docs/capstone_evidence_matrix.md`
+- Next deadline: *[before defense date]*
 
-## Gate status
-Green after all items below are confirmed:
-- [ ] `artifacts/best_EfficientNetB0_FastKAN.pth` is uploaded and loads.
-- [ ] `python smoke_test.py` passes.
-- [ ] GitHub repository is public and contains all required files
-      (including the model weights, or Git LFS is configured for them).
-- [ ] Streamlit deployment completes.
-- [ ] The public URL opens in an incognito/private window.
-- [ ] One known-good input produces a visible result.
-
-## Known-good input
-Use a sample image from the notebook's `test_samples` (drawn from the
-NTHU-DDD dataset itself) — these reliably match the model's training
-distribution and produce a confident, correct prediction.
-
-## Known limitation
-The model is trained on **NTHU-DDD**, a near-infrared, close-up driver
-camera dataset. Ordinary RGB phone/webcam photos are visually out of
-distribution for the model (different lighting, color, framing, sensor),
-so predictions on such photos may be unreliable even though test-set
-accuracy is ~98.78%. This is documented in the app UI itself
-("Known limitation" expander).
-
-## Main risk
-Streamlit Community Cloud has finite CPU and memory, and PyTorch + a CNN
-backbone is heavier than a typical tabular scikit-learn demo. This project
-is still in the "suitable but noticeably heavier" range — CPU inference on
-a single image is fast (~1-2s), but repository size (model weights) and
-first-load time are the main risks. If hosting becomes unreliable, fall
-back to the tested Colab notebook.
+### Honest readiness note
+The project is technically complete: a trained EfficientNetB0 + FastKAN model
+(98.78% on a held-out test split), a reproducible Colab notebook, and a public
+Streamlit demo that runs end-to-end from an uploaded image to a predicted class.
+The main remaining task is rehearsing the live defense. The one caveat stated
+openly across the docs and the app is that the test split is per-frame and the
+model is tuned to NTHU-DDD near-infrared imagery, so a subject-independent
+evaluation and a face-crop input stage are the clear next improvements.
