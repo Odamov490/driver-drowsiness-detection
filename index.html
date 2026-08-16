@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Driver Drowsiness Detection — Capstone Showcase</title>
+<meta name="description" content="EfficientNetB0 + FastKAN driver drowsiness classifier — capstone project showcase." />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b0e14;
+    --panel:#11161f;
+    --line:#1e2733;
+    --fg:#e8edf4;
+    --muted:#8a97a8;
+    --alert:#ff5a52;      /* drowsy / warning */
+    --ok:#39d98a;         /* alert-awake / safe */
+    --amber:#ffb020;      /* caution */
+    --dash:#0f1420;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1100px 500px at 80% -10%, rgba(57,217,138,.06), transparent 60%),
+      radial-gradient(900px 500px at 0% 110%, rgba(255,90,82,.07), transparent 55%),
+      var(--ink);
+    color:var(--fg);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* header */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(11,14,20,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1080px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Sora';font-weight:800;letter-spacing:-.02em}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(57,217,138,.15);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(57,217,138,.15)}50%{box-shadow:0 0 0 8px rgba(57,217,138,.04)}}
+  nav ul{display:flex;gap:26px;list-style:none;font-size:.92rem;color:var(--muted)}
+  nav a:hover{color:var(--fg)}
+  select{
+    background:var(--panel);color:var(--fg);border:1px solid var(--line);
+    border-radius:9px;padding:7px 10px;font-family:inherit;font-size:.86rem;cursor:pointer
+  }
+  @media(max-width:760px){nav{display:none}}
+
+  /* hero */
+  .hero{padding:64px 0 30px;display:grid;grid-template-columns:1.25fr .9fr;gap:32px;align-items:center}
+  @media(max-width:820px){.hero{grid-template-columns:1fr;padding:44px 0 24px}}
+  .eyebrow{
+    font-family:'IBM Plex Mono';font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--amber);margin-bottom:16px
+  }
+  h1{font-family:'Sora';font-size:clamp(2rem,5vw,3.15rem);line-height:1.05;letter-spacing:-.03em;font-weight:800}
+  h1 .accent{
+    background:linear-gradient(100deg,var(--ok),#8ef0bf);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent
+  }
+  .lead{color:var(--muted);font-size:1.06rem;margin:18px 0 26px;max-width:52ch}
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:11px;
+    font-weight:600;font-size:.95rem;border:1px solid transparent;transition:.18s
+  }
+  .btn.primary{background:var(--ok);color:#04160d}
+  .btn.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.ghost{border-color:var(--line);color:var(--fg)}
+  .btn.ghost:hover{border-color:var(--muted);background:var(--panel)}
+
+  /* dashboard card (signature element) */
+  .cluster{
+    background:linear-gradient(180deg,var(--dash),#0b1018);
+    border:1px solid var(--line);border-radius:20px;padding:22px;
+    box-shadow:0 24px 60px -30px rgba(0,0,0,.8)
+  }
+  .cluster .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .cluster .label{font-family:'IBM Plex Mono';font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .gauge{font-family:'Sora';font-weight:800;font-size:3rem;line-height:1;color:var(--ok)}
+  .gauge small{display:block;font-size:.8rem;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:6px}
+  .lights{display:flex;gap:10px;margin-top:6px}
+  .light{flex:1;text-align:center;padding:11px 6px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.02);font-size:.72rem;color:var(--muted)}
+  .light b{display:block;font-family:'IBM Plex Mono';font-size:1.05rem;color:var(--fg);margin-bottom:3px}
+  .light.on-ok{border-color:rgba(57,217,138,.4)}
+  .light.on-ok b{color:var(--ok)}
+
+  /* metric strip */
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:8px 0 8px}
+  @media(max-width:680px){.strip{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .stat .n{font-family:'Sora';font-weight:700;font-size:1.5rem}
+  .stat .k{font-size:.8rem;color:var(--muted);margin-top:3px}
+
+  /* sections */
+  section.block{padding:46px 0;border-top:1px solid var(--line)}
+  .h2{font-family:'Sora';font-weight:700;font-size:1.5rem;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--muted);margin-bottom:26px;max-width:60ch}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card .idx{font-family:'IBM Plex Mono';font-size:.78rem;color:var(--amber);margin-bottom:10px}
+  .card h3{font-family:'Sora';font-size:1.05rem;margin-bottom:8px}
+  .card p,.card li{color:var(--muted);font-size:.93rem}
+  .card ul{padding-left:18px;margin-top:6px}
+  .card li{margin-bottom:4px}
+
+  /* pipeline */
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+  .step{flex:1;min-width:130px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px}
+  .step .t{font-family:'IBM Plex Mono';font-size:.72rem;color:var(--muted)}
+  .step .v{font-family:'Sora';font-weight:600;margin-top:4px;font-size:.96rem}
+  .arrow{align-self:center;color:var(--line);font-size:1.3rem}
+  @media(max-width:820px){.arrow{display:none}}
+
+  /* demo cta */
+  .demo{background:linear-gradient(180deg,var(--dash),#0b1018);border:1px solid var(--line);border-radius:20px;padding:34px;text-align:center}
+  .demo h3{font-family:'Sora';font-size:1.35rem;margin-bottom:8px}
+  .demo p{color:var(--muted);margin-bottom:22px;max-width:50ch;margin-left:auto;margin-right:auto}
+
+  /* limitation note */
+  .note{border:1px solid rgba(255,176,32,.35);background:rgba(255,176,32,.05);border-radius:14px;padding:18px 20px;font-size:.92rem;color:#e8d7b0}
+  .note b{color:var(--amber)}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:.88rem;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand"><span class="dot"></span><span>DrowsyGuard</span></div>
+    <nav><ul>
+      <li><a href="#how" data-i18n="nav_how">Qanday ishlaydi</a></li>
+      <li><a href="#metrics" data-i18n="nav_metrics">Natijalar</a></li>
+      <li><a href="#demo" data-i18n="nav_demo">Demo</a></li>
+    </ul></nav>
+    <select id="langSelect" onchange="setLang(this.value)" aria-label="Language">
+      <option value="uz">O'zbekcha</option>
+      <option value="en">English</option>
+      <option value="ru">Русский</option>
+    </select>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <div class="eyebrow" data-i18n="eyebrow">Capstone · Computer Vision</div>
+      <h1 data-i18n="h1">Haydovchi uyquchanligini <span class="accent">aniqlash</span></h1>
+      <p class="lead" data-i18n="lead">EfficientNetB0 + FastKAN modeli haydovchining yuz rasmini to'rt holatga ajratadi va uyquchanlik belgilarini aniqlaydi.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://driver-drowsiness-detection-1997.streamlit.app" target="_blank" rel="noopener" data-i18n="btn_try">Jonli demoni ochish</a>
+        <a class="btn ghost" href="https://github.com/Odamov490/driver-drowsiness-detection" target="_blank" rel="noopener" data-i18n="btn_code">GitHub kodi</a>
+      </div>
+    </div>
+
+    <!-- signature: instrument-cluster style status card -->
+    <div class="cluster" aria-label="Model status">
+      <div class="row">
+        <span class="label" data-i18n="cl_label">Test aniqligi</span>
+        <span class="label" style="color:var(--ok)">● LIVE</span>
+      </div>
+      <div class="gauge">98.78%<small data-i18n="cl_sub">held-out test · 9,979 rasm</small></div>
+      <div class="lights">
+        <div class="light on-ok"><b>F1</b><span>98.78%</span></div>
+        <div class="light on-ok"><b>Prec</b><span>98.79%</span></div>
+        <div class="light on-ok"><b>Rec</b><span>98.78%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- METRIC STRIP -->
+  <div class="strip">
+    <div class="stat"><div class="n">66,521</div><div class="k" data-i18n="s_imgs">jami rasm</div></div>
+    <div class="stat"><div class="n">4</div><div class="k" data-i18n="s_cls">klass</div></div>
+    <div class="stat"><div class="n">20</div><div class="k" data-i18n="s_ep">epoch</div></div>
+    <div class="stat"><div class="n">EffNetB0</div><div class="k" data-i18n="s_bb">+ FastKAN</div></div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="block" id="how">
+    <div class="h2" data-i18n="how_h">Qanday ishlaydi</div>
+    <p class="sub" data-i18n="how_s">Xom rasmdan bashoratgacha bo'lgan quvur. Bir xil preprocessing training va ilovada ishlatiladi.</p>
+    <div class="flow">
+      <div class="step"><div class="t">01 · INPUT</div><div class="v" data-i18n="f1">Yuz rasmi</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="t">02 · PREP</div><div class="v" data-i18n="f2">224×224 + normalize</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="t">03 · MODEL</div><div class="v" data-i18n="f3">EfficientNetB0 + FastKAN</div></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="t">04 · OUTPUT</div><div class="v" data-i18n="f4">Klass + ishonchlilik</div></div>
+    </div>
+
+    <div class="grid3" style="margin-top:26px">
+      <article class="card">
+        <div class="idx">01</div>
+        <h3 data-i18n="c1_h">Muammo va foydalanuvchi</h3>
+        <p data-i18n="c1_p">Charchoq va uyqusirash sabab yo'l hodisalarining oldini olish. Foydalanuvchi — haydovchi kuzatuv va xavfsizlik tizimlari.</p>
+      </article>
+      <article class="card">
+        <div class="idx">02</div>
+        <h3 data-i18n="c2_h">Ma'lumot va model</h3>
+        <ul>
+          <li data-i18n="c2_l1">NTHU-DDD, 66,521 belgilangan kadr</li>
+          <li data-i18n="c2_l2">4 klass, class-weighted loss</li>
+          <li data-i18n="c2_l3">EfficientNetB0 backbone + FastKAN qatlami</li>
+        </ul>
+      </article>
+      <article class="card">
+        <div class="idx">03</div>
+        <h3 data-i18n="c3_h">Deploy</h3>
+        <p data-i18n="c3_p">Streamlit Cloud'da ommaviy ilova. Rasm yuklanadi, model klass va ehtimollik diagrammasini qaytaradi. Git LFS orqali model saqlangan.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- METRICS -->
+  <section class="block" id="metrics">
+    <div class="h2" data-i18n="m_h">Klasslar bo'yicha natija</div>
+    <p class="sub" data-i18n="m_s">Held-out test to'plamidagi (9,979 rasm) klass-bo'yicha F1 ko'rsatkichlari.</p>
+    <div class="grid3">
+      <article class="card"><div class="idx">notdrowsy</div><h3>0.9866 F1</h3><p data-i18n="m1">Uyg'oq holat — 4,574 namuna</p></article>
+      <article class="card"><div class="idx">sleepyCombination</div><h3>0.9978 F1</h3><p data-i18n="m2">Uyquchan holat — 2,664 namuna</p></article>
+      <article class="card"><div class="idx">slowBlinkWithNodding</div><h3>0.9810 F1</h3><p data-i18n="m3">Sekin pirpirash — 1,412 namuna</p></article>
+    </div>
+    <article class="card" style="margin-top:16px">
+      <div class="idx">yawning</div><h3>0.9792 F1</h3><p data-i18n="m4">Esnash — 1,329 namuna. Hisobotdagi eng zaif klass, lekin hali ham yuqori.</p>
+    </article>
+  </section>
+
+  <!-- DEMO CTA -->
+  <section class="block" id="demo">
+    <div class="demo">
+      <h3 data-i18n="d_h">O'zingiz sinab ko'ring</h3>
+      <p data-i18n="d_p">Jonli ilovaga o'ting, yuz rasmini yuklang va model haydovchi holatini bashorat qilsin.</p>
+      <a class="btn primary" href="https://driver-drowsiness-detection-1997.streamlit.app" target="_blank" rel="noopener" data-i18n="d_btn">Ilovani ochish →</a>
+    </div>
+    <div class="note" style="margin-top:22px">
+      <b data-i18n="note_b">Ma'lum cheklov:</b> <span data-i18n="note_t">Model NTHU-DDD infraqizil kadrlarida o'qitilgan va ta'lim maqsadidagi prototip. Oddiy telefon rasmlarida natija farq qilishi mumkin; real xavfsizlik qarorlari uchun ishlatilmasin.</span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <span data-i18n="foot">Capstone loyihasi · EfficientNetB0 + FastKAN · NTHU-DDD</span>
+</footer>
+
+<script>
+  const T = {
+    uz:{
+      nav_how:"Qanday ishlaydi",nav_metrics:"Natijalar",nav_demo:"Demo",
+      eyebrow:"Capstone · Kompyuter ko'rish",
+      h1:'Haydovchi uyquchanligini <span class="accent">aniqlash</span>',
+      lead:"EfficientNetB0 + FastKAN modeli haydovchining yuz rasmini to'rt holatga ajratadi va uyquchanlik belgilarini aniqlaydi.",
+      btn_try:"Jonli demoni ochish",btn_code:"GitHub kodi",
+      cl_label:"Test aniqligi",cl_sub:"held-out test · 9,979 rasm",
+      s_imgs:"jami rasm",s_cls:"klass",s_ep:"epoch",s_bb:"+ FastKAN",
+      how_h:"Qanday ishlaydi",how_s:"Xom rasmdan bashoratgacha bo'lgan quvur. Bir xil preprocessing training va ilovada ishlatiladi.",
+      f1:"Yuz rasmi",f2:"224×224 + normalize",f3:"EfficientNetB0 + FastKAN",f4:"Klass + ishonchlilik",
+      c1_h:"Muammo va foydalanuvchi",c1_p:"Charchoq va uyqusirash sabab yo'l hodisalarining oldini olish. Foydalanuvchi — haydovchi kuzatuv va xavfsizlik tizimlari.",
+      c2_h:"Ma'lumot va model",c2_l1:"NTHU-DDD, 66,521 belgilangan kadr",c2_l2:"4 klass, class-weighted loss",c2_l3:"EfficientNetB0 backbone + FastKAN qatlami",
+      c3_h:"Deploy",c3_p:"Streamlit Cloud'da ommaviy ilova. Rasm yuklanadi, model klass va ehtimollik diagrammasini qaytaradi. Git LFS orqali model saqlangan.",
+      m_h:"Klasslar bo'yicha natija",m_s:"Held-out test to'plamidagi (9,979 rasm) klass-bo'yicha F1 ko'rsatkichlari.",
+      m1:"Uyg'oq holat — 4,574 namuna",m2:"Uyquchan holat — 2,664 namuna",m3:"Sekin pirpirash — 1,412 namuna",m4:"Esnash — 1,329 namuna. Hisobotdagi eng zaif klass, lekin hali ham yuqori.",
+      d_h:"O'zingiz sinab ko'ring",d_p:"Jonli ilovaga o'ting, yuz rasmini yuklang va model haydovchi holatini bashorat qilsin.",d_btn:"Ilovani ochish →",
+      note_b:"Ma'lum cheklov:",note_t:"Model NTHU-DDD infraqizil kadrlarida o'qitilgan va ta'lim maqsadidagi prototip. Oddiy telefon rasmlarida natija farq qilishi mumkin; real xavfsizlik qarorlari uchun ishlatilmasin.",
+      foot:"Capstone loyihasi · EfficientNetB0 + FastKAN · NTHU-DDD"
+    },
+    en:{
+      nav_how:"How it works",nav_metrics:"Results",nav_demo:"Demo",
+      eyebrow:"Capstone · Computer Vision",
+      h1:'Driver drowsiness <span class="accent">detection</span>',
+      lead:"An EfficientNetB0 + FastKAN model classifies a driver's face image into four states and flags signs of drowsiness.",
+      btn_try:"Open live demo",btn_code:"GitHub code",
+      cl_label:"Test accuracy",cl_sub:"held-out test · 9,979 images",
+      s_imgs:"total images",s_cls:"classes",s_ep:"epochs",s_bb:"+ FastKAN",
+      how_h:"How it works",how_s:"The pipeline from raw image to prediction. The same preprocessing is used in training and in the app.",
+      f1:"Face image",f2:"224×224 + normalize",f3:"EfficientNetB0 + FastKAN",f4:"Class + confidence",
+      c1_h:"Problem & user",c1_p:"Preventing road accidents caused by fatigue and micro-sleeps. The user is a driver-monitoring / safety context.",
+      c2_h:"Data & model",c2_l1:"NTHU-DDD, 66,521 labeled frames",c2_l2:"4 classes, class-weighted loss",c2_l3:"EfficientNetB0 backbone + FastKAN head",
+      c3_h:"Deployment",c3_p:"Public app on Streamlit Cloud. You upload an image; the model returns a class and a probability chart. Weights ship via Git LFS.",
+      m_h:"Per-class results",m_s:"Per-class F1 on the held-out test set (9,979 images).",
+      m1:"Alert state — 4,574 samples",m2:"Sleepy state — 2,664 samples",m3:"Slow blink — 1,412 samples",m4:"Yawning — 1,329 samples. Weakest class in the report, but still high.",
+      d_h:"Try it yourself",d_p:"Open the live app, upload a face image, and let the model predict the driver's state.",d_btn:"Open the app →",
+      note_b:"Known limitation:",note_t:"The model was trained on NTHU-DDD infrared frames and is an educational prototype. Results may differ on ordinary phone photos; do not use for real safety-critical decisions.",
+      foot:"Capstone project · EfficientNetB0 + FastKAN · NTHU-DDD"
+    },
+    ru:{
+      nav_how:"Как работает",nav_metrics:"Результаты",nav_demo:"Демо",
+      eyebrow:"Capstone · Компьютерное зрение",
+      h1:'Определение сонливости <span class="accent">водителя</span>',
+      lead:"Модель EfficientNetB0 + FastKAN классифицирует изображение лица водителя на четыре состояния и выявляет признаки сонливости.",
+      btn_try:"Открыть демо",btn_code:"Код на GitHub",
+      cl_label:"Точность на тесте",cl_sub:"отложенный тест · 9,979 изображений",
+      s_imgs:"всего изображений",s_cls:"класса",s_ep:"эпох",s_bb:"+ FastKAN",
+      how_h:"Как это работает",how_s:"Путь от изображения к предсказанию. Одинаковый препроцессинг в обучении и в приложении.",
+      f1:"Изображение лица",f2:"224×224 + нормализация",f3:"EfficientNetB0 + FastKAN",f4:"Класс + уверенность",
+      c1_h:"Проблема и пользователь",c1_p:"Предотвращение аварий из-за усталости и микросна. Пользователь — системы мониторинга и безопасности водителя.",
+      c2_h:"Данные и модель",c2_l1:"NTHU-DDD, 66,521 размеченный кадр",c2_l2:"4 класса, взвешенная по классам функция потерь",c2_l3:"EfficientNetB0 + слой FastKAN",
+      c3_h:"Развёртывание",c3_p:"Публичное приложение на Streamlit Cloud. Вы загружаете изображение; модель возвращает класс и диаграмму вероятностей. Веса через Git LFS.",
+      m_h:"Результаты по классам",m_s:"F1 по классам на отложенном тесте (9,979 изображений).",
+      m1:"Бодрый — 4,574 образца",m2:"Сонное состояние — 2,664 образца",m3:"Медленное моргание — 1,412 образцов",m4:"Зевота — 1,329 образцов. Самый слабый класс в отчёте, но всё ещё высокий.",
+      d_h:"Попробуйте сами",d_p:"Откройте приложение, загрузите изображение лица, и модель предскажет состояние водителя.",d_btn:"Открыть приложение →",
+      note_b:"Известное ограничение:",note_t:"Модель обучена на инфракрасных кадрах NTHU-DDD и является учебным прототипом. На обычных фото с телефона результат может отличаться; не для реальных решений безопасности.",
+      foot:"Capstone проект · EfficientNetB0 + FastKAN · NTHU-DDD"
+    }
+  };
+  function setLang(l){
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const k=el.getAttribute('data-i18n');
+      if(T[l]&&T[l][k]!=null) el.innerHTML=T[l][k];
+    });
+    document.documentElement.lang=l;
+  }
+</script>
+</body>
+</html>
