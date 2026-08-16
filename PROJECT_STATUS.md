@@ -3,7 +3,7 @@
 ## EXTC4 — Evidence & Defense Readiness Gate
 
 Project: **Driver Drowsiness Detection (EfficientNetB0 + FastKAN)**
-Student: *[your full name]*
+Student: *[Gulomjon Odamov]*
 Repository: `https://github.com/Odamov490/driver-drowsiness-detection`
 Live demo: `https://driver-drowsiness-detection-1997.streamlit.app`
 

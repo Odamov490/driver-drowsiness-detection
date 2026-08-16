@@ -1,6 +1,6 @@
 # Driver Drowsiness Detection — EfficientNetB0 + FastKAN
 
-**Student:** *[your full name]*
+**Student:** *[Gulomjon Odamov]*
 **Live demo:** https://driver-drowsiness-detection-1997.streamlit.app
 **Repository:** https://github.com/Odamov490/driver-drowsiness-detection
 

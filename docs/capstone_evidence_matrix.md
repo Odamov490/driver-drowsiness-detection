@@ -3,7 +3,7 @@
 > Rule: `Exact evidence location` must be a repository path + section/cell/output, a public link, or an exact live-demo step.
 
 Project: **Driver Drowsiness Detection (EfficientNetB0 + FastKAN)**
-Student: *[your full name]*
+Student: *[Gulomjon Odamov]*
 Repository: `https://github.com/Odamov490/driver-drowsiness-detection`
 Live demo: `https://driver-drowsiness-detection-1997.streamlit.app`
 
