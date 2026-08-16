@@ -255,24 +255,42 @@ def inject_css() -> None:
         /* ---------- Section titles ---------- */
         .ddx-sec{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 0 10px;}
 
-        /* ---------- Upload card ---------- */
-        .ddx-upload{
-            background:var(--card);border:2px dashed #CBD5E1;border-radius:16px;
-            padding:34px 20px;text-align:center;transition:.18s;margin-bottom:6px;
-        }
-        .ddx-upload:hover{border-color:var(--primary);background:#FBFDFF;}
-        .ddx-upload .u-ic{
-            width:56px;height:56px;border-radius:14px;margin:0 auto 12px;
-            background:rgba(37,99,235,.08);color:var(--primary);display:flex;align-items:center;justify-content:center;
-        }
-        .ddx-upload .u-ic svg{width:28px;height:28px;}
-        .ddx-upload h3{font-size:1.05rem;font-weight:600;margin:0 0 4px;}
-        .ddx-upload p{color:var(--muted);font-size:.9rem;margin:0 0 8px;}
-        .ddx-upload .fmt{font-size:.78rem;color:#94A3B8;font-weight:600;letter-spacing:.04em;}
-
+        /* ---------- Upload (the real dropzone, restyled to a big card) ---------- */
+        [data-testid="stFileUploader"]{margin-bottom:6px;}
+        [data-testid="stFileUploader"] section,
         [data-testid="stFileUploaderDropzone"]{
-            background:var(--card);border:1px solid var(--border);border-radius:12px;
+            background:var(--card);border:2px dashed #CBD5E1;border-radius:16px;
+            padding:34px 24px;transition:.18s;min-height:150px;
+            display:flex;align-items:center;justify-content:center;
         }
+        [data-testid="stFileUploader"] section:hover,
+        [data-testid="stFileUploaderDropzone"]:hover{
+            border-color:var(--primary);background:#FBFDFF;cursor:pointer;
+        }
+        /* Hide Streamlit's default icon + English instructions/limits text */
+        [data-testid="stFileUploaderDropzoneInstructions"] > div > svg,
+        [data-testid="stFileUploaderDropzoneInstructions"] small,
+        [data-testid="stFileUploaderDropzoneInstructions"] span{display:none;}
+        /* Inject our own localized label via ::before on the instructions block */
+        [data-testid="stFileUploaderDropzoneInstructions"]{
+            display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text);
+        }
+        [data-testid="stFileUploaderDropzoneInstructions"]::before{
+            content:"";width:56px;height:56px;border-radius:14px;margin:0 auto 12px;
+            background:rgba(37,99,235,.08) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="%232563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>') center/28px no-repeat;
+            display:block;
+        }
+        [data-testid="stFileUploaderDropzoneInstructions"]::after{
+            content:attr(data-ddx-title);font-size:1.05rem;font-weight:600;color:var(--text);
+        }
+        /* Style the built-in Browse button as a clean secondary control */
+        [data-testid="stFileUploader"] button{
+            background:#fff;color:var(--primary);border:1px solid rgba(37,99,235,.35);
+            border-radius:9px;font-weight:600;padding:7px 16px;margin-top:12px;
+        }
+        [data-testid="stFileUploader"] button:hover{background:rgba(37,99,235,.06);border-color:var(--primary);}
+        /* Small caption under the uploader with formats */
+        .ddx-upfmt{text-align:center;font-size:.78rem;color:#94A3B8;font-weight:600;letter-spacing:.04em;margin:-2px 0 4px;}
 
         /* ---------- How it works ---------- */
         .ddx-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px;}
@@ -462,29 +480,35 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ---- Upload visual + native uploader ----
-st.markdown(
-    f"""
-    <div class="ddx-upload">
-      <div class="u-ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>
-        </svg>
-      </div>
-      <h3>{t['upload_title']}</h3>
-      <p>{t['upload_hint']}</p>
-      <div class="fmt">{t['upload_formats']}</div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
+# ---- Upload: the native uploader itself is styled to look like the card ----
+# (No separate decorative div — the real dropzone is what the user sees and
+#  clicks, so browsing/selecting a file always works.)
 uploaded_file = st.file_uploader(
     t["upload_title"],
     type=["jpg", "jpeg", "png"],
     label_visibility="collapsed",
+)
+
+# Formats caption under the dropzone
+st.markdown(f'<div class="ddx-upfmt">{t["upload_formats"]}</div>', unsafe_allow_html=True)
+
+# Inject our localized title into the native dropzone instructions (::after reads
+# this attribute), so the big clickable area shows our own text in the chosen
+# language instead of Streamlit's English default.
+st.markdown(
+    f"""
+    <script>
+    const _t = {{"title": "{t['upload_title']}"}};
+    function ddxLabel() {{
+      const el = window.parent.document.querySelector('[data-testid="stFileUploaderDropzoneInstructions"]');
+      if (el) el.setAttribute('data-ddx-title', _t.title);
+    }}
+    ddxLabel();
+    setTimeout(ddxLabel, 200);
+    setTimeout(ddxLabel, 600);
+    </script>
+    """,
+    unsafe_allow_html=True,
 )
 
 # ---- Empty state ----
